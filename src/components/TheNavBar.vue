@@ -6,14 +6,10 @@
       </div>
     </div>
     <div class="links">
-      <div class="link">
-        <a>My Link</a>
-      </div>
-      <div class="link">
-        <a>My Link</a>
-      </div>
-      <div class="link">
-        <a>My Link</a>
+      <div class="link" v-for="album in album_list" :key="album">
+        <router-link :to=" {name: 'album.show', params: {slug: album}} ">
+          {{album}}
+        </router-link>
       </div>
     </div>
 
@@ -21,8 +17,36 @@
 </template>
 
 <script>
+import {Storage} from "aws-amplify";
+
+
 export default {
-  name: "TheNavBar"
+  name: "TheNavBar",
+  data(){
+    return{
+      album_list: new Set(),
+    }
+  },
+  mounted(){
+    this.getAlbumList()
+  },
+  methods:
+  {
+    async getAlbumList()
+    {
+      //let folders = []
+      Storage.list('').then(results=>{
+        results.forEach(result=>{
+          let folder = result.key.split('/').slice(0,-1)[0]
+          if(!this.album_list.has(folder))
+          {
+            this.album_list.add(folder)
+          }
+        })
+      })
+    },
+  }
+
 }
 </script>
 

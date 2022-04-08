@@ -1,9 +1,7 @@
 <template>
   <div class="main-window">
     <div class="center-photo">
-
         <img class="photo" src="https://southamericatourism.com/wp-content/uploads/2018/08/PAT_1400x1000_EcoCamp6.jpg">
-
     </div>
   </div>
 </template>
@@ -12,6 +10,7 @@
 // @ is an alias to /src
 //import HelloWorld from '@/components/HelloWorld.vue'
 import axios from 'axios'
+import {Auth} from "aws-amplify";
 
 export default {
   name: 'HomeView',
@@ -21,12 +20,14 @@ export default {
   data()
   {
     return{
-      testing: []
+      testing: [],
+      isAuthed: false,
+      username: ''
     }
   },
   mounted(){
-    this.testApi()
-    this.printApi()
+
+    this.getAuth()
   },
   methods: {
     printApi()
@@ -44,6 +45,34 @@ export default {
       .catch(error =>{
         console.log(error)
       })
+    },
+    testAuth()
+    {
+      console.log("Checking for current user")
+      console.log(Auth.currentUserCredentials())
+      console.log(Auth.currentAuthenticatedUser())
+      Auth.currentAuthenticatedUser().then(username =>{
+        console.log(username)
+      })
+
+
+
+    },
+    async getAuth(){
+      try{
+        await Auth.currentAuthenticatedUser().then(username=>{
+          console.log(username.username)
+          console.log(username)
+          this.username = username.username
+        });
+        this.isAuthed = true
+        console.log("Is logged in")
+
+      }
+      catch{
+        this.isAuthed = false
+        console.log("Not logged in")
+      }
     }
   }
 }

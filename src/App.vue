@@ -4,7 +4,11 @@
       <TheNavBar/>
     </div>
     <div class="main-view">
-      <router-view/>
+      <router-view v-slot="{Component, route}">
+        <transition name="fade">
+          <component :is="Component" :key="route.path"/>
+        </transition>
+      </router-view>
     </div>
     <div class="myfooter">
       <TheFooter/>
@@ -17,12 +21,28 @@
 import TheFooter from "@/components/TheFooter";
 import TheNavBar from "@/components/TheNavBar";
 
+
 export default{
-  components: {TheNavBar, TheFooter}
+  components: {TheNavBar, TheFooter},
+
 }
 </script>
 
 <style lang="scss">
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 1s ease;
+
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  position: absolute;
+  transform: translateX(200%);
+}
+
 .my-container{
   display: grid;
   //grid-template-columns: 70% 30% ;
@@ -80,4 +100,6 @@ export default{
 
   }
 }
+
+@import '../node_modules/bulma';
 </style>
