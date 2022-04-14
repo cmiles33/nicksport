@@ -4,31 +4,46 @@ import LoginView from "@/views/LoginView";
 import AlbumCreationView from "@/views/AlbumCreationView";
 import AlbumView from "@/views/AlbumView";
 import PhotoView from "@/views/PhotoView";
+import ThePhoto from "@/components/ThePhoto";
 const routes = [
   {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: HomeView,
+
   },
   {
     path: '/login',
     name: 'log_in',
-    component: LoginView
+    component: LoginView,
+
   },
   {
     path: '/create',
     name: 'create_album',
-    component: AlbumCreationView
+    component: AlbumCreationView,
+
   },
   {
     path: '/album/:slug',
     name: 'album.show',
-    component: AlbumView
+    component: AlbumView,
+
   },
   {
-    path: '/album/:album/:key',
+    path: '/album/:album/photo',
     name: 'photo.show',
-    component: PhotoView
+    component: PhotoView,
+    meta: {transition: 'real'},
+    children:[
+      {
+        path: ':key',
+        name: 'photo.key',
+        component: ThePhoto,
+        meta: {transition: 'real'}
+      }
+    ]
+
   }
 ]
 

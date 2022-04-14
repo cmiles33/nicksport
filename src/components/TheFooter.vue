@@ -1,22 +1,24 @@
 <template>
   <div class="footer-container">
-    <div class="subtitle">
-      This be the mad footing.
-      <div class="columns">
-        <div class="column">
-          <router-link :to="{name: 'log_in'}">
-            Login to your account.
-          </router-link>
-        </div>
-        <div class="column">
-          <router-link to="/">
-            Home Page
-          </router-link>
-        </div>
-        <div v-if="auth.route === 'authenticated'"  class="column">
-          <router-link :to="{name: 'create_album'}">
-            Make New album
-          </router-link>
+    <div  v-if="auth.route === 'authenticated'">
+      <div class="subtitle">
+        This is your Control Area.
+        <div class="columns">
+          <div class="column">
+            <router-link :to="{name: 'log_in'}">
+              Sign Out / Manage Your Stuff
+            </router-link>
+          </div>
+          <div v-if="auth.route === 'authenticated'"  class="column">
+            <router-link :to="{name: 'create_album'}">
+              Make New album
+            </router-link>
+          </div>
+          <div class="column">
+            <router-link to="/">
+              Home Page
+            </router-link>
+          </div>
         </div>
       </div>
     </div>

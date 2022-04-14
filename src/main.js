@@ -7,8 +7,6 @@ import awsconfig from './aws-exports'
 
 import "@aws-amplify/ui-vue/styles.css"
 
-
-
 Amplify.configure(awsconfig)
 
 createApp(App).use(router, axios).mount('#app')

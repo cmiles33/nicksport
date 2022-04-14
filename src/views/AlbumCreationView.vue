@@ -4,6 +4,8 @@
       <div class="drop-zone" @drop="onFileDrop"  >
         <h1 class="title">
           Drag photos here for upload
+          <br>
+          (or anywhere in the preview area)
         </h1>
         <h1 v-if="upload_percent !== 0" class="title is-info">
           Upload Percent: {{upload_percent * 100}}%
@@ -18,7 +20,7 @@
         </div>
       </div>
       <div class="selection-area">
-        <div class="selection-container">
+        <div :class="{ has_background_danger: danger_var}" class="selection-container">
           <div>
             <button class="button is-fullwidth is-info" @click="uploadList">
               Upload Selected photos
@@ -52,6 +54,16 @@
             <button class="button is-fullwidth is-primary" @click="addNewAlbum">
               Add New Album
             </button>
+            <div v-if="delete_list.size === 0 && album_preview.length !==0">
+              <p class="has-text-danger-dark"> If you want to select photos to delete, click on a photo below.</p>
+            </div>
+            <div v-else-if="delete_list.size !==0">
+              <p> You have selected {{delete_list.size}} photos to remove.</p>
+              <button class="button is-fullwidth is-danger" @click="deleteSelection">
+                Delete Selected Photos!
+              </button>
+            </div>
+
           </div>
           <div v-if="album_selected !== '' ">
             <p class="title is-centered">
@@ -63,7 +75,7 @@
       <div class="preview-album">
         <div class="preview-album-container">
           <div v-for="preview in album_preview" :key="preview.id"  class="album-photo">
-            <img alt="Whoops....." :src="preview">
+            <img alt="Whoops....." :src="preview[1]" @click="deleteSelect($event,preview[0])" >
           </div>
         </div>
       </div>
@@ -102,6 +114,9 @@ export default {
       album_list: new Set(),
       album_preview: [],
       upload_percent: 0,
+      danger_var: false,
+      delete_list: new Set(),
+
     }
   },
   mounted() {
@@ -116,17 +131,72 @@ export default {
       if(this.album_selected === '')
       {
         console.log("No Album No problems")
+
       }
       else{
         // Try to get photos from S3
         console.log(this.album_selected)
         console.log("Uploading Album Preview....")
+        this.delete_list.clear()
         this.getAlbumPhotos()
+      }
+    },
+    upload_percent(){
+      if (this.upload_percent === 100)
+      {
+        this.getAlbumPhotos()
+        this.danger_var = false
+      }
+      else
+      {
+        this.danger_var = true
       }
     }
   },
 
   methods: {
+    deleteSelect(event, key)
+    {
+      console.log(key)
+
+      if(!this.delete_list.has(key))
+      {
+        this.delete_list.add(key)
+        event.target.classList.add('big-danger')
+      }
+      else if(this.delete_list.has(key))
+      {
+        event.target.classList.remove('big-danger')
+        this.delete_list.delete(key)
+      }
+      console.log(this.delete_list)
+    },
+    deleteSelection()
+    {
+      if(this.delete_list.size === 0)
+      {
+        console.log("Error....")
+      }
+      else
+      {
+        this.delete_list.forEach(photo=>{
+          Storage.remove(photo).then( results=>{
+            console.log(results)
+            console.log("delted Succ.")
+          })
+          this.delete_list.delete(photo)
+          console.log(this.delete_list)
+          console.log("This was Deleted: " + photo)
+
+        })
+        setTimeout(()=>{
+          this.getAlbumList()
+          this.getAlbumPhotos()
+        },1000)
+
+      }
+    },
+
     async getAlbumPhotos()
     {
       let album_key = this.album_selected
@@ -134,11 +204,15 @@ export default {
       album_key = album_key + '/'
       Storage.list(album_key)
           .then(result=>{
-            console.log(result)
+
+            //console.log(result)
             result.forEach(pictures =>{
+              let photo_info = []
+              photo_info.push(pictures.key)
               Storage.get(pictures.key).then( myurl=>{
-                    console.log(myurl)
-                    this.album_preview.push(myurl)
+                    //console.log(myurl)
+                photo_info.push(myurl)
+                    this.album_preview.push(photo_info)
               })
 
             })
@@ -150,15 +224,18 @@ export default {
     async getAlbumList()
     {
       //let folders = []
-      Storage.list('').then(results=>{
-        results.forEach(result=>{
-          let folder = result.key.split('/').slice(0,-1)[0]
-          if(!this.album_list.has(folder))
-          {
-            this.album_list.add(folder)
-          }
+      setTimeout(()=>{
+        this.album_list.clear()
+        Storage.list('').then(results=>{
+          results.forEach(result=>{
+            let folder = result.key.split('/').slice(0,-1)[0]
+            if(!this.album_list.has(folder))
+            {
+              this.album_list.add(folder)
+            }
+          })
         })
-      })
+      },500)
     },
     async uploadList()
     {
@@ -166,6 +243,7 @@ export default {
       if(this.album_selected === '')
       {
         console.log("no Album selected.....")
+        alert("No Album Selected..")
       }
       else{
         if(this.files_to_upload.length === 0)
@@ -200,9 +278,13 @@ export default {
         await Storage.put(name, file,  {
           contentType: "image/png", // contentType is optional
           progressCallback
+        }).then( results=>{
+          console.log(results.key)
+          console.log("Upload Complete")
+          this.files_to_upload.pop()
+          this.file_preview.pop()
         });
-        this.files_to_upload.pop()
-        this.file_preview.pop()
+
       } catch (error) {
         console.log("Error uploading file: ", error);
       }
@@ -334,6 +416,7 @@ export default {
 }
 .preview-album-container{
   padding-left: 15px;
+  padding-right: 15px;
   padding-top: 15px;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -344,6 +427,12 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: scale-down;
+
+}
+.big-danger{
+  border: darkred 10px solid;
+  box-shadow: 0 0 10px firebrick;
+  opacity: 80%;
 }
 
 </style>

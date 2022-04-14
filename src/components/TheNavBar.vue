@@ -1,14 +1,16 @@
 <template>
   <div class="nav-container">
     <div class="brand">
-      <div class="title">
-        My Website.
-      </div>
+      <router-link :to=" {name: 'home'} ">
+        <div class="title">
+          HeroOfNow
+        </div>
+      </router-link>
     </div>
     <div class="links">
       <div class="link" v-for="album in album_list" :key="album">
         <router-link :to=" {name: 'album.show', params: {slug: album}} ">
-          {{album}}
+          {{album.replace('_',' ') }}
         </router-link>
       </div>
     </div>
@@ -50,12 +52,14 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@300&display=swap');
 
 .nav-container{
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
   grid-auto-rows: minmax(50px, auto);
+
 
 }
 
@@ -68,13 +72,37 @@ export default {
   grid-template-columns: 1fr;
   grid-row-gap: 10px;
 }
-.link{
-  font-family: "DejaVu Sans";
+.link a{
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 200;
+  text-transform: capitalize;
+  color: black;
+  text-decoration: none;
+  font-size: large;
+  flex: 1;
+  transition: all 0.5s ease-out;
 
 }
+.link a:hover{
+  color: white;
+  background: black;
+  padding: 4px 4px 4px 4px;
+  border: white solid 2px;
+}
+
+
+
 .title{
-  font-size: 50px;
-  font-family: Roboto,serif;
+  font-size: 30px;
+  font-family: 'Source Serif Pro', serif;
+}
+
+@media Screen and (max-width: 700px)
+{
+  .brand{
+    border-right: black solid 2px;
+    padding-right: 10px;
+  }
 }
 
 

@@ -6,13 +6,41 @@
       </div>
     </div>
     <div class="photo-container" v-else >
+        <router-view>
+          <the-photo class="photo" :class="{'photo-active': active}" :photo_location="photo_url"></the-photo>
+        </router-view>
 
-      <the-photo class="photo" :class="{'photo-active': active}" :photo_location="photo_url"></the-photo>
-      <div class="previous" @click="getPrevious" >
+          <router-link class="previous"  :to=" {name: 'photo.key', params: { album: $route.params.album, key: previous }}">
 
+          </router-link>
+
+
+
+        <router-link class="next" :to=" {name: 'photo.key', params: { album: $route.params.album, key: next }}">
+
+        </router-link>
+    </div>
+    <div class="columns">
+      <div class="column ">
+        <router-link :to=" {name: 'photo.key', params: { album: $route.params.album, key: previous }}">
+          <div class="subtitle has-text-centered link">
+              Previous
+          </div>
+        </router-link>
       </div>
-      <div class="next" @click="getNext">
-
+      <div class="column">
+          <router-link :to=" {name: 'album.show', params: {slug: $route.params.album}} ">
+            <div class="subtitle has-text-centered link">
+              View Album
+            </div>
+          </router-link>
+      </div>
+      <div class="column">
+          <router-link :to=" {name: 'photo.key', params: { album: $route.params.album, key: next }}">
+            <div class="subtitle has-text-centered link">
+              Next
+            </div>
+          </router-link>
       </div>
     </div>
   </div>
@@ -33,8 +61,8 @@ export default {
       photo_name: '',
       // You'll Need a Method to get previous photo
       // And to get the next photo
-      next: [],
-      previous: [],
+      next: 'dumb',
+      previous: 'dumb',
       album_list: [],
       index: 0,
       active: true,
@@ -46,6 +74,12 @@ export default {
     this.makeList()
 
   },
+  watch: {
+    photo_url()
+    {
+        this.active = true
+    }
+  },
   methods: {
     getNext()
     {
@@ -56,24 +90,21 @@ export default {
       if(this.index === this.album_list.length)
       {
         this.index = 0
+
         Storage.get(this.album_list[this.index]).then(result=>{
-          setTimeout(() =>{
+
             this.photo_url = result
-            this.active = true
-          }, 2000)
 
         })
       }
       else
       {
+        console.log(this.album_list[this.index])
         Storage.get(this.album_list[this.index]).then(result=>{
-          setTimeout(() =>{
             this.photo_url = result
-            this.active = true
-          }, 2000)
-
         })
       }
+      this.setNextPrev()
 
     },
     getPrevious()
@@ -100,6 +131,7 @@ export default {
           }, 2000)
         })
       }
+      this.setNextPrev()
     },
     makeList()
     {
@@ -109,6 +141,7 @@ export default {
             result.forEach(photo=>{
               this.album_list.push(photo.key)
               this.makeIndex()
+              this.setNextPrev()
             })
           }
       )
@@ -126,6 +159,36 @@ export default {
           counter +=1
         }
       })
+    },
+    setNextPrev()
+    {
+      if(this.index === this.album_list.length || this.index === this.album_list.length -1)
+      {
+        this.next = this.album_list[0]
+        this.previous = this.album_list[this.index-1]
+      }
+      else if(this.index === 0)
+      {
+        this.next = this.album_list[this.index+1]
+        this.previous = this.album_list[this.album_list.length-1]
+      }
+      else
+      {
+        this.next = this.album_list[this.index+1]
+        this.previous = this.album_list[this.index-1]
+      }
+
+
+      try{
+        this.next = this.next.split('/')[1]
+        this.previous = this.previous.split('/')[1]
+      }
+      catch{
+        console.log("Not ready")
+      }
+      console.log(this.next)
+      console.log(this.previous)
+
     },
     async get_photo()
     {
@@ -149,12 +212,15 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@300&display=swap');
 
 .photo-container{
   padding-top: 15px;
   display: grid;
   grid-template-areas: "overlayarea";
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(810px, auto);
+
 
 
 }
@@ -162,14 +228,14 @@ export default {
   grid-area: overlayarea;
   align-self: center;
   justify-self: center;
-  width: 90%;
+  width: 78%;
   height: 100%;
   object-fit: cover;
   grid-column: 1/3;
   user-select: none;
   opacity: 0;
-  transition: opacity;
-  transition-duration: 2s;
+  transition: opacity 1s ease-in-out;
+
 
 
 }
@@ -195,10 +261,43 @@ export default {
 }
 .previous{
   grid-area: overlayarea;
-
   grid-column: 1/2 ;
   cursor: w-resize;
 }
 
+.link{
+  font-family: "DejaVu Sans";
+  color: black;
+  text-decoration: none;
+  transition: all 0.5s ease-out;
+
+}
+.link a{
+  font-family: "DejaVu Sans";
+  color: black;
+  text-decoration: none;
+  transition: all 0.5s ease-out;
+}
+.link a:hover{
+  color: white;
+  background: black;
+  border: white solid 2px;
+}
+
+
+
+.subtitle{
+  font-family: 'Source Serif Pro', serif;
+}
+@media Screen and (max-width: 700px)
+{
+  .photo-container{
+
+    grid-template-rows: minmax(150px, auto);
+
+
+
+  }
+}
 
 </style>

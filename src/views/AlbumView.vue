@@ -8,7 +8,7 @@
       </div>
       <div v-else class="album-container">
         <div v-for="photo in photos" :key="photo">
-          <router-link :to=" {name: 'photo.show', params: { album: photo[0][0], key: photo[0][1] }} ">
+          <router-link :to=" {name: 'photo.key', params: { album: photo[0][0], key: photo[0][1] }} ">
             <div class="album-photo">
               <img :src="photo[1]" alt="Whoops...">
             </div>
@@ -79,55 +79,31 @@ export default {
 .album-container{
   padding-top: 15px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-template-rows: minmax(100px, auto);
+
+  grid-template-columns: repeat(auto-fill,minmax(350px,1fr));
   grid-gap: 15px 15px;
+  transition: all 1s ease-in-out;
 
 }
 .album-container >div
 {
-  background: grey;
+
 }
 .album-container >div:nth-child(odd)
 {
-  background: darkgrey;
+
 }
 .album-photo{
   width:100%;
   height: 100%;
   object-fit: scale-down;
+  transition: 0.5s ease transform;
 }
-@media screen and (max-width:1400px)
-{
-  .album-container{
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-auto-rows: minmax(100px, auto);
-    grid-gap: 5px;
-
-  }
+.album-photo:hover{
+  box-shadow: 0 0 10px lightgrey;
+  transform: scale(1.03);
 }
-@media screen and (max-width:900px)
-{
-  .album-container{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-auto-rows: minmax(100px, auto);
-    grid-gap: 5px;
 
-
-  }
-}
-@media screen and (max-width:500px)
-{
-  .album-container{
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-auto-rows: minmax(100px, auto);
-    grid-gap: 5px;
-
-  }
-}
 
 
 
