@@ -13,7 +13,7 @@ const routes = [
 
   },
   {
-    path: '/login',
+    path: '/controlzone',
     name: 'log_in',
     component: LoginView,
 

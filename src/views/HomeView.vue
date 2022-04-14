@@ -168,7 +168,7 @@ export default {
     grid-gap: 15px 15px;
 
     .centered-text{
-      opacity: 100%;
+      opacity: 0;
     }
 
   }
