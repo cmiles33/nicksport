@@ -166,7 +166,10 @@ export default {
 
     grid-template-columns: repeat(auto-fill,minmax(400px,1fr));
     grid-gap: 15px 15px;
-    background: firebrick;
+
+    .centered-text{
+      opacity: 100%;
+    }
 
   }
 }
