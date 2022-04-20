@@ -29,17 +29,20 @@
           <div>
             <select class="select is-fullwidth" v-model="album_selected">
               <option v-for="album in album_list" :value="album" :key="album">
-                {{album}}
+                {{album.name}}
               </option>
             </select>
-            <p v-if="album_selected === ''" class="subtitle is-danger">Please Select Album</p>
+            <p v-if="album_selected.name === ''" class="subtitle is-danger">Please Select Album</p>
             <p v-else class="subtitle is-primary">
-              {{album_selected}}: Is your selection.
+              {{album_selected.name}}: Is your selection.
             </p>
           </div>
           <div>
             <button class="button is-fullwidth is-danger" @click="clearList">
               Clear All Selected Photos
+            </button>
+            <button v-if="album_selected.name !==''"  class="button is-fullwidth is-dark my-3" @click="deleteAlbum">
+              Delete Album
             </button>
           </div>
           <div class="input-area">
@@ -65,7 +68,7 @@
             </div>
 
           </div>
-          <div v-if="album_selected !== '' ">
+          <div v-if="album_selected.name !== '' ">
             <p class="title is-centered">
               Current Photos Below:
             </p>
@@ -85,7 +88,10 @@
 
 <script>
 
-import {Storage} from "aws-amplify";
+import {Storage, API, graphqlOperation} from "aws-amplify";
+import {deleteAlbum, createAlbum, createPhoto, deletePhoto } from "@/graphql/mutations";
+import {getAlbum, } from "@/graphql/queries";
+import {listAlbums, listPhotos} from "@/graphql/queries";
 
 String.prototype.hashCode = function() {
   var hash = 0, i, chr;
@@ -105,23 +111,27 @@ export default {
   data()
   {
     return{
-      album_selected: '',
+      album_selected: {},
       new_album: '',
       filename: '',
       file: '',
       files_to_upload: [],
+      previews_to_upload: [],
       file_preview: [],
       album_list: new Set(),
       album_preview: [],
       upload_percent: 0,
       danger_var: false,
       delete_list: new Set(),
-
+      current_file_name: ''
     }
   },
   mounted() {
     //this.getList()
     this.getAlbumList()
+    //this.testApi()
+
+
     // Get list of Albums from database or S3
 
   },
@@ -137,6 +147,7 @@ export default {
         // Try to get photos from S3
         console.log(this.album_selected)
         console.log("Uploading Album Preview....")
+        //this.getPhotosApi()
         this.delete_list.clear()
         this.getAlbumPhotos()
       }
@@ -180,9 +191,19 @@ export default {
       else
       {
         this.delete_list.forEach(photo=>{
-          Storage.remove(photo).then( results=>{
-            console.log(results)
-            console.log("delted Succ.")
+
+          console.log(photo)
+          console.log(photo.photo_key)
+          console.log(photo.preview_key)
+          console.log(photo.id)
+          Storage.remove(photo.photo_key).catch(error=>{
+            console.log(error)
+          })
+          Storage.remove(photo.preview_key).catch(error=>{
+            console.log(error)
+          })
+          API.graphql(graphqlOperation(deletePhoto, {input: {id: photo.id}})).catch(error=>{
+            console.log(error)
           })
           this.delete_list.delete(photo)
           console.log(this.delete_list)
@@ -196,51 +217,70 @@ export default {
 
       }
     },
+    async deleteAlbum()
+    {
+      console.log(this.album_selected.id)
+      await API.graphql(graphqlOperation(getAlbum,{id: this.album_selected.id})).then(album=>{
+        let photos = album.data.getAlbum.photos.items
+        console.log(photos)
+        photos.forEach(photo=>{
+          console.log(photo)
+          Storage.remove(photo.photo_key).catch(error=>{
+            console.log(error)
+          })
+          Storage.remove(photo.preview_key).catch(error=>{
+            console.log(error)
+          })
+          API.graphql(graphqlOperation(deletePhoto, {input: {id: photo.id}})).then( ()=>{
+            API.graphql(graphqlOperation(deleteAlbum, {input: {id: this.album_selected.id}})).then(()=>{
+                  this.getAlbumList()
+                  this.album_preview = []
+                }
+            ).catch(error=>{
+              console.log(error)
+            })
+          }).catch(error=>{
+            console.log(error)
+          })
+        })
+      })
 
+
+
+    },
     async getAlbumPhotos()
     {
-      let album_key = this.album_selected
-      this.album_preview = []
-      album_key = album_key + '/'
-      Storage.list(album_key)
-          .then(result=>{
-
-            //console.log(result)
-            result.forEach(pictures =>{
-              let photo_info = []
-              photo_info.push(pictures.key)
-              Storage.get(pictures.key).then( myurl=>{
-                    //console.log(myurl)
-                photo_info.push(myurl)
-                    this.album_preview.push(photo_info)
-              })
-
-            })
+        this.album_preview = []
+        console.log("API Getting Previews....")
+        let album = await API.graphql(graphqlOperation(getAlbum,{id: this.album_selected.id}))
+        let photos = album.data.getAlbum.photos.items
+        photos.forEach( photo =>{
+          let photo_info = []
+          photo_info.push(photo)
+          Storage.get(photo.preview_key).then( myurl=>{
+            photo_info.push(myurl)
+            this.album_preview.push(photo_info)
           })
-          .catch(err =>{
-            console.log(err)
-          })
+        })
+
     },
     async getAlbumList()
     {
-      //let folders = []
-      setTimeout(()=>{
-        this.album_list.clear()
-        Storage.list('').then(results=>{
-          results.forEach(result=>{
-            let folder = result.key.split('/').slice(0,-1)[0]
-            if(!this.album_list.has(folder))
-            {
-              this.album_list.add(folder)
-            }
-          })
+      this.album_list.clear()
+      this.album_selected.name = ''
+      API.graphql(graphqlOperation(listAlbums)).then(result=>{
+        const albums = result.data.listAlbums.items
+        albums.forEach(album=>{
+          this.album_list.add(album)
+          console.log(album)
         })
-      },500)
+      })
     },
     async uploadList()
     {
+
       console.log("Uploading List of Files")
-      if(this.album_selected === '')
+      if(this.album_selected.name === '')
       {
         console.log("no Album selected.....")
         alert("No Album Selected..")
@@ -252,25 +292,33 @@ export default {
         }
         else {
           console.log("Start Uploading")
-          this.files_to_upload.forEach( file=>{
+
+          this.files_to_upload.forEach( (file, index )=>{
             console.log(file)
-            let folder_path = this.album_selected + '/'
+            let preview = this.previews_to_upload[index]
+            let folder_path = this.album_selected.name + '/'
             console.log("Folder Path: " + folder_path)
-            this.uploadS3(file, folder_path)
+            this.uploadS3(file, folder_path, preview)
+
+
           })
           //this.files_to_upload = []
           //this.file_preview = []
           // Call Function For new Album Preview.
+
           await this.getAlbumList()
           await this.getAlbumPhotos()
+
         }
       }
     },
-    async uploadS3(file,folder)
+    async uploadS3(file, folder, preview)
     {
       console.log(folder)
       try {
         let name = folder + 'hero'+ file.name.hashCode().toString()
+        let preview_name = folder + 'preview/' + 'hero' + preview.name.hashCode().toString()
+        console.log(preview_name)
         const progressCallback = (progress) =>{
           this.upload_percent = progress.loaded / progress.total
 
@@ -280,17 +328,73 @@ export default {
           progressCallback
         }).then( results=>{
           console.log(results.key)
+          let key = results.key
+
+          Storage.put(preview_name, preview, {
+            contentType: "image/png"
+          }).then(prev_results=>{
+            let prev_key = prev_results.key
+
+            API.graphql(
+                {
+                  query: createPhoto,
+                  variables:{input:
+                        {
+                          title: name,
+                          albumPhotosId: this.album_selected.id,
+                          photo_key: key,
+                          preview_key: prev_key
+                        }}})
+                .then(result=>{
+                  console.log(result)
+                })
+          })
           console.log("Upload Complete")
           this.files_to_upload.pop()
+          this.previews_to_upload.pop()
           this.file_preview.pop()
         });
-
       } catch (error) {
         console.log("Error uploading file: ", error);
       }
     },
     async onFileDrop(e)
     {
+
+      function calculateSize(img, maxWidth, maxHeight) {
+        let width = img.width;
+        let height = img.height;
+        // calculate the width and height, constraining the proportions
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        return [width, height];
+      }
+
+      const bobcallback = (blob) =>{
+        blob.name = this.current_file_name
+        console.log(blob)
+        this.previews_to_upload.push(blob)
+        const objectURL = window.URL.createObjectURL(blob)
+        this.file_preview.push(objectURL)
+        console.log("Compressed Photo")
+      }
+
+
+
+      const MAX_WIDTH = 1200;
+      const MAX_HEIGHT = 1200;
+      const MIME_TYPE = "image/jpeg";
+      const QUALITY = .90;
+
       console.log(e)
       console.log("Oh heeee done dropping")
       e.preventDefault()
@@ -301,11 +405,39 @@ export default {
           if (e.dataTransfer.items[i].kind === 'file') {
             let file = e.dataTransfer.items[i].getAsFile();
             this.files_to_upload.push(file)
+            this.current_file_name = file.name
+            /*
             const objectURL = window.URL.createObjectURL(file)
             this.file_preview.push(objectURL)
+
+             */
             console.log(this.files_to_upload)
             console.log(file)
             console.log('... file[' + i + '].name = ' + file.name);
+            const blobURL = URL.createObjectURL(file)
+            const img = new Image()
+            img.src = blobURL
+            img.onerror = function(){
+              URL.revokeObjectURL(this.src)
+              console.log("Cannot load Image....")
+            }
+            img.onload = function () {
+              URL.revokeObjectURL(this.src);
+              const [newWidth, newHeight] = calculateSize(img, MAX_WIDTH, MAX_HEIGHT);
+              const canvas = document.createElement("canvas");
+              canvas.width = newWidth;
+              canvas.height = newHeight;
+
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, newWidth, newHeight);
+              canvas.toBlob(
+                  bobcallback,
+                  MIME_TYPE,
+                  QUALITY
+              );
+
+            };
+
           }
         }
       }
@@ -316,21 +448,56 @@ export default {
         }
       }
     },
-    addNewAlbum()
+    async addNewAlbum()
     {
       let new_album = this.new_album
       // Do Checks
       new_album = new_album.replaceAll(' ','_').toLowerCase()
       console.log("Here is new album:" + new_album)
-      this.album_list.add(new_album)
-      this.album_selected = new_album
-      this.new_album = ''
+      API.graphql(graphqlOperation(createAlbum, {input: { name: new_album}})).then(results=>{
+        console.log(results.data.createAlbum)
+        this.album_list.add(results.data.createAlbum)
+        this.album_selected = results.data.createAlbum
+        this.new_album = ''
+      })
+
     },
     clearList()
     {
       this.files_to_upload = []
       this.file_preview = []
+      this.previews_to_upload = []
     },
+    async testApi()
+    {
+
+      //API.graphql(graphqlOperation(createAlbum, {input: first_album}))
+      console.log("Tried to Create Album.")
+      API.graphql(graphqlOperation(listAlbums)).then(result=>{
+        const photos = result.data.listAlbums.items
+        photos.forEach(album=>{
+          API.graphql(graphqlOperation(deleteAlbum, {input: {id: album.id}}))
+        })
+
+      })
+      API.graphql(graphqlOperation(listPhotos)).then(result=>{
+        const photos = result.data.listPhotos.items
+        photos.forEach(photo=>{
+          API.graphql(graphqlOperation(deletePhoto, {input: {id: photo.id}})).catch(error=>{
+            console.log(error)
+          })
+        })
+      })
+    },
+    async getPhotosApi()
+    {
+      const album = await API.graphql(graphqlOperation(getAlbum,{id: this.album_selected.id}))
+      console.log(album)
+      let photos = album.data.getAlbum.photos.items
+      photos.forEach( photo =>{
+        console.log(photo)
+      })
+    }
   },
 
 

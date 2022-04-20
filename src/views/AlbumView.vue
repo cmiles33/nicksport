@@ -21,7 +21,8 @@
 
 <script>
 
-import {Storage} from "aws-amplify";
+import {Storage, API, graphqlOperation} from "aws-amplify";
+import {listAlbums} from "@/graphql/queries";
 
 export default {
   name: "AlbumView",
@@ -41,8 +42,32 @@ export default {
   methods: {
     async get_photos()
     {
-      let album = this.$route.params.slug
-      let album_key = album.toLowerCase() + '/'
+      let album_name = this.$route.params.slug
+      album_name = album_name.toLowerCase()
+      let albums = await API.graphql(graphqlOperation(listAlbums))
+      const albums_objects = albums.data.listAlbums.items
+      albums_objects.forEach(result=>{
+        if(result.name === album_name)
+        {
+          let photos = result.photos.items
+          photos.forEach(photo=>{
+            let info = []
+            let linkInfo = []
+            linkInfo.push(album_name)
+
+            console.log(photo.photo_key)
+            linkInfo.push(photo.photo_key.split('/')[1])
+            info.push(linkInfo)
+            Storage.get(photo.preview_key).then(photo_url=>{
+              info.push(photo_url)
+              this.photos.push(info)
+            })
+          })
+        }
+      })
+
+      /*
+      //let album_key = album.toLowerCase() + '/'
       Storage.list(album_key)
       .then(result =>{
         if(result.length === 0)
@@ -65,7 +90,9 @@ export default {
 
       })
 
-      this.album = album
+       */
+
+      this.album = album_name
 
     }
   }

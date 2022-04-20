@@ -9,8 +9,8 @@
     </div>
     <div class="links">
       <div class="link" v-for="album in album_list" :key="album">
-        <router-link :to=" {name: 'album.show', params: {slug: album}} ">
-          {{album.replace('_',' ') }}
+        <router-link :to=" {name: 'album.show', params: {slug: album.name}} ">
+          {{album.name.replace('_',' ') }}
         </router-link>
       </div>
     </div>
@@ -19,8 +19,8 @@
 </template>
 
 <script>
-import {Storage} from "aws-amplify";
-
+import {API, graphqlOperation} from "aws-amplify";
+import {listAlbums} from "@/graphql/queries";
 
 export default {
   name: "TheNavBar",
@@ -37,6 +37,13 @@ export default {
     async getAlbumList()
     {
       //let folders = []
+      API.graphql(graphqlOperation(listAlbums)).then(result=>{
+        const albums = result.data.listAlbums.items
+        albums.forEach(album=>{
+          this.album_list.add(album)
+        })
+      })
+      /*
       Storage.list('').then(results=>{
         results.forEach(result=>{
           let folder = result.key.split('/').slice(0,-1)[0]
@@ -46,6 +53,7 @@ export default {
           }
         })
       })
+       */
     },
   }
 

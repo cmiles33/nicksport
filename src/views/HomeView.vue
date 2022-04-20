@@ -14,7 +14,8 @@
 <script>
 // @ is an alias to /src
 //import HelloWorld from '@/components/HelloWorld.vue'
-import {Auth, Storage} from "aws-amplify";
+import {Auth, Storage, API, graphqlOperation} from "aws-amplify";
+import {listAlbums} from "@/graphql/queries";
 
 export default {
   name: 'HomeView',
@@ -27,7 +28,6 @@ export default {
       testing: [],
       isAuthed: false,
       username: '',
-      album_list: new Set(),
       photo_prev_list: [],
     }
   },
@@ -37,7 +37,22 @@ export default {
   methods: {
     async getAlbumList()
     {
-
+      API.graphql(graphqlOperation(listAlbums)).then(results=>{
+        const albums = results.data.listAlbums.items
+        albums.forEach(album=>{
+          let preview_info = []
+          preview_info.push(album.name)
+          console.log(album.photos.items[0].preview_key)
+          let preview_key = album.photos.items[0].preview_key
+          Storage.get(preview_key).then(photo_url=>{
+            preview_info.push(photo_url)
+            this.photo_prev_list.push(preview_info)
+          }).catch(error=>{
+            console.log(error)
+          })
+        })
+      })
+      /*
       Storage.list('').then(results=>{
         results.forEach(result=>{
           let preview_info = []
@@ -48,12 +63,14 @@ export default {
             preview_info.push(folder)
             Storage.get(result.key).then(photo_url=>{
               preview_info.push(photo_url)
-              this.photo_prev_list.push(preview_info)
+              //this.photo_prev_list.push(preview_info)
 
             })
           }
         })
       })
+
+       */
     },
     testAuth()
     {

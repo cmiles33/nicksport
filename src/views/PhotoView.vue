@@ -139,9 +139,12 @@ export default {
       Storage.list(album_key).then(
           result=>{
             result.forEach(photo=>{
-              this.album_list.push(photo.key)
-              this.makeIndex()
-              this.setNextPrev()
+              if(photo.key.split('/')[1] !== 'preview')
+              {
+                this.album_list.push(photo.key)
+                this.makeIndex()
+                this.setNextPrev()
+              }
             })
           }
       )
@@ -152,7 +155,6 @@ export default {
       this.album_list.forEach(photo=>{
         if( photo.split('/')[1] === this.photo_name )
         {
-          console.log("Index Found: " + counter)
           this.index = counter
         }
         else {
@@ -186,9 +188,6 @@ export default {
       catch{
         console.log("Not ready")
       }
-      console.log(this.next)
-      console.log(this.previous)
-
     },
     async get_photo()
     {
@@ -197,9 +196,7 @@ export default {
       this.album_name = album_name
       this.photo_name = photo_name
       let photo_key = album_name + '/' + photo_name
-      console.log(photo_key)
       Storage.get(photo_key.toString(),).then(result=>{
-        console.log(result)
         this.photo_url = result
       }).catch(error=>{
         this.error = true
