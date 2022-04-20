@@ -55,7 +55,7 @@ export default {
             let linkInfo = []
             linkInfo.push(album_name)
 
-            console.log(photo.photo_key)
+            //console.log(photo.photo_key)
             linkInfo.push(photo.photo_key.split('/')[1])
             info.push(linkInfo)
             Storage.get(photo.preview_key).then(photo_url=>{

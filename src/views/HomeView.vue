@@ -1,10 +1,15 @@
 <template>
   <div class="main-window">
     <div v-for="photo in photo_prev_list" :key="photo">
+      <router-link v-if="mobile_view" :to=" {name: 'album.show', params: {slug: photo[0]}} ">
+        <div  class="album-text has-text-centered">
+          {{photo[0].replaceAll('_',' ')}}
+        </div>
+      </router-link>
       <div class="photo-overlay">
         <router-link :to=" {name: 'album.show', params: {slug: photo[0]}} ">
           <img class="center-photo" :src="photo[1]" alt="Whoops....">
-          <p class="centered-text">{{photo[0].replace('_',' ')}}</p>
+          <p class="centered-text">{{photo[0].replaceAll('_',' ')}}</p>
         </router-link>
       </div>
     </div>
@@ -16,6 +21,8 @@
 //import HelloWorld from '@/components/HelloWorld.vue'
 import {Auth, Storage, API, graphqlOperation} from "aws-amplify";
 import {listAlbums} from "@/graphql/queries";
+
+
 
 export default {
   name: 'HomeView',
@@ -29,12 +36,29 @@ export default {
       isAuthed: false,
       username: '',
       photo_prev_list: [],
+      mobile_view: false,
     }
   },
   mounted(){
     this.getAlbumList()
+    window.addEventListener('resize',this.handleResize)
+    this.handleResize()
+  },
+  unmounted() {
+    window.removeEventListener('resize', this.handleResize);
   },
   methods: {
+    handleResize()
+    {
+      if(window.innerWidth > 400)
+      {
+        this.mobile_view = false
+      }
+      else
+      {
+        this.mobile_view = true
+      }
+    },
     async getAlbumList()
     {
       API.graphql(graphqlOperation(listAlbums)).then(results=>{
@@ -42,7 +66,7 @@ export default {
         albums.forEach(album=>{
           let preview_info = []
           preview_info.push(album.name)
-          console.log(album.photos.items[0].preview_key)
+          //console.log(album.photos.items[0].preview_key)
           let preview_key = album.photos.items[0].preview_key
           Storage.get(preview_key).then(photo_url=>{
             preview_info.push(photo_url)
@@ -108,7 +132,7 @@ export default {
   padding-top: 15px;
   display: grid;
 
-  grid-template-columns: repeat(auto-fill,minmax(600px,1fr));
+  grid-template-columns: repeat(auto-fill,minmax(520px,1fr));
   grid-gap: 5px 5px;
 
 }
@@ -123,7 +147,7 @@ export default {
 .center-photo{
   grid-column: 1/4;
   grid-row: 1/5;
-  justify-self: end;
+
 
 }
 
@@ -142,6 +166,16 @@ export default {
   box-shadow: 0 0 10px lightgrey;
   transform: scale(1.04);
 }
+.album-text{
+  color: black;
+  text-transform: capitalize;
+  font-family: 'Source Serif Pro', serif;
+  font-size: 20px;
+  font-weight: 400;
+  text-decoration: underline black 1px;
+  padding-bottom: 10px;
+
+}
 .centered-text{
   position: absolute;
   top: 50%;
@@ -151,8 +185,8 @@ export default {
   text-transform: capitalize;
   color: black;
 
-  font-size: 30px;
-  font-weight: 400;
+  font-size: 20px;
+  font-weight: 300;
   padding: 50px;
   opacity: 60%;
   background-color: lightgrey;
@@ -181,11 +215,18 @@ export default {
     padding-top: 15px;
     display: grid;
 
-    grid-template-columns: repeat(auto-fill,minmax(400px,1fr));
+    grid-template-columns: repeat(auto-fill,minmax(360px,1fr));
     grid-gap: 15px 15px;
 
     .centered-text{
       opacity: 0;
+    }
+    .center-photo{
+      border: black solid 1px;
+
+    }
+    .photo-overlay{
+      width: 100%
     }
 
   }

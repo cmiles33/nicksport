@@ -106,11 +106,14 @@ export default{
     grid-column: 1;
     grid-row: 1;
     border-right: none;
+    border-bottom: black solid 2px;
+    padding-bottom: 5px;
   }
   .main-view{
     grid-column: 1;
     grid-row: 2/7;
-    padding: 10px 10px;
+    padding-left: 5px;
+    padding-right: 5px;
   }
   .myfooter{
     grid-column: 1;

@@ -10,7 +10,7 @@
     <div class="links">
       <div class="link" v-for="album in album_list" :key="album">
         <router-link :to=" {name: 'album.show', params: {slug: album.name}} ">
-          {{album.name.replace('_',' ') }}
+          {{album.name.replaceAll('_',' ') }}
         </router-link>
       </div>
     </div>
@@ -103,6 +103,7 @@ export default {
 .title{
   font-size: 30px;
   font-family: 'Source Serif Pro', serif;
+  padding-top: 50px;
 }
 
 @media Screen and (max-width: 700px)
