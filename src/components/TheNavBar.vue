@@ -79,6 +79,7 @@ export default {
   display: grid;
   grid-template-columns: 1fr;
   grid-row-gap: 10px;
+  padding-left: 10px;
 }
 .link a{
   font-family: 'Source Serif Pro', serif;
@@ -103,7 +104,7 @@ export default {
 .title{
   font-size: 30px;
   font-family: 'Source Serif Pro', serif;
-  padding-top: 50px;
+
 }
 
 @media Screen and (max-width: 700px)
@@ -111,6 +112,9 @@ export default {
   .brand{
     border-right: black solid 2px;
     padding-right: 10px;
+  }
+  .title{
+    padding-top: 50px;
   }
 }
 
