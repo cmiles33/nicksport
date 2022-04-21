@@ -44,6 +44,12 @@
             <button v-if="album_selected.name !==''"  class="button is-fullwidth is-dark my-3" @click="deleteAlbum">
               Delete Album
             </button>
+            <div v-if="album_selected.name !==''" class="my-4">
+              <input class="input is-fullwidth has-text-centered my-3" v-model="updated_album">
+              <button class="button is-fullwidth is-dark" @click="updateAlbumName">
+                Update Selected Album Name
+              </button>
+            </div>
           </div>
           <div class="input-area">
             <p>
@@ -57,6 +63,7 @@
             <button class="button is-fullwidth is-primary" @click="addNewAlbum">
               Add New Album
             </button>
+
             <div v-if="delete_list.size === 0 && album_preview.length !==0">
               <p class="has-text-danger-dark"> If you want to select photos to delete, click on a photo below.</p>
             </div>
@@ -89,7 +96,7 @@
 <script>
 
 import {Storage, API, graphqlOperation} from "aws-amplify";
-import {deleteAlbum, createAlbum, createPhoto, deletePhoto } from "@/graphql/mutations";
+import {deleteAlbum, createAlbum, createPhoto, deletePhoto, updateAlbum } from "@/graphql/mutations";
 import {getAlbum, } from "@/graphql/queries";
 import {listAlbums, listPhotos} from "@/graphql/queries";
 
@@ -123,7 +130,8 @@ export default {
       upload_percent: 0,
       danger_var: false,
       delete_list: new Set(),
-      current_file_name: ''
+      current_file_name: '',
+      updated_album: '',
     }
   },
   mounted() {
@@ -150,6 +158,7 @@ export default {
         //this.getPhotosApi()
         this.delete_list.clear()
         this.getAlbumPhotos()
+        this.updated_album = this.album_selected.name
       }
     },
     upload_percent(){
@@ -227,27 +236,53 @@ export default {
       //console.log(this.album_selected.id)
       await API.graphql(graphqlOperation(getAlbum,{id: this.album_selected.id})).then(album=>{
         let photos = album.data.getAlbum.photos.items
-        //console.log(photos)
-        photos.forEach(photo=>{
-          //console.log(photo)
-          Storage.remove(photo.photo_key).catch(error=>{
+        console.log(photos)
+        if(photos.length === 0)
+        {
+          console.log("No photos to delete. Just delete Album")
+          API.graphql(graphqlOperation(deleteAlbum, {input: {id: this.album_selected.id}})).then(()=>{
+                this.getAlbumList()
+                this.album_preview = []
+              }
+          ).catch(error=>{
             console.log(error)
           })
-          Storage.remove(photo.preview_key).catch(error=>{
-            console.log(error)
-          })
-          API.graphql(graphqlOperation(deletePhoto, {input: {id: photo.id}})).then( ()=>{
-            API.graphql(graphqlOperation(deleteAlbum, {input: {id: this.album_selected.id}})).then(()=>{
-                  this.getAlbumList()
-                  this.album_preview = []
-                }
-            ).catch(error=>{
+        }
+        else
+        {
+          photos.forEach((photo, index)=>{
+            //console.log(photo)
+            Storage.remove(photo.photo_key).catch(error=>{
               console.log(error)
             })
-          }).catch(error=>{
-            console.log(error)
+            Storage.remove(photo.preview_key).catch(error=>{
+              console.log(error)
+            })
+            if(index === (photos.length - 1))
+            {
+              API.graphql(graphqlOperation(deletePhoto, {input: {id: photo.id}})).then( ()=>{
+                API.graphql(graphqlOperation(deleteAlbum, {input: {id: this.album_selected.id}})).then(()=>{
+                    this.album_list.clear()
+                    this.getAlbumList()
+                    this.album_preview = []
+                    }
+                ).catch(error=>{
+                  console.log(error)
+                })
+              }).catch(error=>{
+                console.log(error)
+              })
+            }
+            else
+            {
+              API.graphql(graphqlOperation(deletePhoto, {input: {id: photo.id}})).catch(error=>{
+                console.log(error)
+              })
+            }
+
           })
-        })
+        }
+
       })
 
 
@@ -466,6 +501,23 @@ export default {
         this.album_selected = results.data.createAlbum
         this.new_album = ''
       })
+
+    },
+    async updateAlbumName()
+    {
+      if(this.updated_album !== '')
+      {
+        let updated_album = this.updated_album
+        updated_album = updated_album.replaceAll(' ','_').toLowerCase()
+        await API.graphql(graphqlOperation(updateAlbum, {input: {id: this.album_selected.id,
+            name: updated_album}})).then(result=>{
+          console.log(result)
+          this.getAlbumList()
+          this.album_selected = result.data.updateAlbum
+        }).catch(error=>{
+          console.log(error)
+        })
+      }
 
     },
     clearList()
