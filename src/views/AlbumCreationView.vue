@@ -132,6 +132,7 @@ export default {
       delete_list: new Set(),
       current_file_name: '',
       updated_album: '',
+      file_names: [],
     }
   },
   mounted() {
@@ -417,7 +418,9 @@ export default {
       }
 
       const bobcallback = (blob) =>{
-        blob.name = this.current_file_name
+
+        blob.name = this.file_names.pop()
+        //console.log(blob)
         //console.log(blob)
         this.previews_to_upload.push(blob)
         this.files_to_upload.push(blob)
@@ -433,6 +436,8 @@ export default {
       const MIME_TYPE = "image/jpeg";
       const QUALITY = .90;
 
+      this.file_names = []
+
       //console.log(e)
       console.log("Oh heeee done dropping")
       e.preventDefault()
@@ -444,6 +449,8 @@ export default {
             let file = e.dataTransfer.items[i].getAsFile();
             //this.files_to_upload.push(file)
             this.current_file_name = file.name
+            this.file_names.push(file.name)
+            //console.log(file)
             /*
             const objectURL = window.URL.createObjectURL(file)
             this.file_preview.push(objectURL)
