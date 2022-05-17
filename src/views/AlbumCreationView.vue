@@ -508,7 +508,6 @@ export default {
         this.album_selected = results.data.createAlbum
         this.new_album = ''
       })
-
     },
     async updateAlbumName()
     {

@@ -65,36 +65,21 @@ export default {
         const albums = results.data.listAlbums.items
         albums.forEach(album=>{
           let preview_info = []
-          preview_info.push(album.name)
           //console.log(album.photos.items[0].preview_key)
-          let preview_key = album.photos.items[0].preview_key
-          Storage.get(preview_key).then(photo_url=>{
-            preview_info.push(photo_url)
-            this.photo_prev_list.push(preview_info)
-          }).catch(error=>{
-            console.log(error)
-          })
-        })
-      })
-      /*
-      Storage.list('').then(results=>{
-        results.forEach(result=>{
-          let preview_info = []
-          let folder = result.key.split('/').slice(0,-1)[0]
-          if(!this.album_list.has(folder))
+          if (album.photos.items[0] !== undefined)
           {
-            this.album_list.add(folder)
-            preview_info.push(folder)
-            Storage.get(result.key).then(photo_url=>{
+            preview_info.push(album.name)
+            let preview_key = album.photos.items[0].preview_key
+            Storage.get(preview_key).then(photo_url=>{
               preview_info.push(photo_url)
-              //this.photo_prev_list.push(preview_info)
-
+              this.photo_prev_list.push(preview_info)
+            }).catch(error=>{
+              console.log(error)
             })
           }
+
         })
       })
-
-       */
     },
     testAuth()
     {

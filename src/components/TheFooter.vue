@@ -1,9 +1,16 @@
 <template>
   <div class="footer-container">
     <div  v-if="auth.route === 'authenticated'">
-      <div class="subtitle">
+      <button v-if="showarea" class="button is-small is-black" @click="hidearea">
+        Hide Control Zone
+      </button>
+      <button v-else class="button is-small is-white" @click="hidearea">
+       Show Control Zone
+      </button>
+      <div v-if="showarea" class="subtitle">
         This is your Control Area.
-        <div class="columns">
+
+        <div  class="columns">
           <div class="column">
             <router-link :to="{name: 'log_in'}">
               Sign Out / Manage Your Stuff
@@ -19,6 +26,7 @@
               Home Page
             </router-link>
           </div>
+
         </div>
       </div>
     </div>
@@ -39,6 +47,7 @@ export default {
   data(){
     return{
       auth,
+      showarea: true,
 
     }
   },
@@ -46,6 +55,13 @@ export default {
 
   },
   methods:{
+    hidearea()
+    {
+      if(this.showarea === true)
+        this.showarea = false
+      else
+        this.showarea = true
+    },
     async signOut() {
       try {
         await Auth.signOut();
