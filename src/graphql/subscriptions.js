@@ -6,6 +6,7 @@ export const onCreateAlbum = /* GraphQL */ `
     onCreateAlbum {
       id
       name
+      album_cover
       photos {
         items {
           id
@@ -28,6 +29,7 @@ export const onUpdateAlbum = /* GraphQL */ `
     onUpdateAlbum {
       id
       name
+      album_cover
       photos {
         items {
           id
@@ -50,6 +52,7 @@ export const onDeleteAlbum = /* GraphQL */ `
     onDeleteAlbum {
       id
       name
+      album_cover
       photos {
         items {
           id
@@ -72,15 +75,6 @@ export const onCreatePhoto = /* GraphQL */ `
     onCreatePhoto {
       id
       title
-      album {
-        id
-        name
-        photos {
-          nextToken
-        }
-        createdAt
-        updatedAt
-      }
       photo_key
       preview_key
       createdAt
@@ -94,15 +88,6 @@ export const onUpdatePhoto = /* GraphQL */ `
     onUpdatePhoto {
       id
       title
-      album {
-        id
-        name
-        photos {
-          nextToken
-        }
-        createdAt
-        updatedAt
-      }
       photo_key
       preview_key
       createdAt
@@ -116,15 +101,6 @@ export const onDeletePhoto = /* GraphQL */ `
     onDeletePhoto {
       id
       title
-      album {
-        id
-        name
-        photos {
-          nextToken
-        }
-        createdAt
-        updatedAt
-      }
       photo_key
       preview_key
       createdAt

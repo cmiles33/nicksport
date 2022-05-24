@@ -63,10 +63,23 @@
             <button class="button is-fullwidth is-primary" @click="addNewAlbum">
               Add New Album
             </button>
+            <button class="button is-fullwidth is-danger my-3" @click="chooseSelectMode('delete')">
+              Select Photos to Delete
+            </button>
 
-            <div v-if="delete_list.size === 0 && album_preview.length !==0">
-              <p class="has-text-danger-dark"> If you want to select photos to delete, click on a photo below.</p>
-            </div>
+            <button class="button is-fullwidth is-success my-3" @click="chooseSelectMode('album_select')">
+              Select Album Cover
+            </button>
+            <p v-if="!deleteMode">
+              Choose a photo below to pick an album cover.
+            </p>
+            <p class="has-text-danger-dark" v-else>
+              Choose photos below to delete.
+            </p>
+            <button v-if="selected_cover !==''" class="button is-fullwidth is-info my-3" @click="updateAlbumCover">
+              Set Cover Selection
+            </button>
+
             <div v-else-if="delete_list.size !==0">
               <p> You have selected {{delete_list.size}} photos to remove.</p>
               <button class="button is-fullwidth is-danger" @click="deleteSelection">
@@ -77,15 +90,23 @@
           </div>
           <div v-if="album_selected.name !== '' ">
             <p class="title is-centered">
-              Current Photos Below:
+              Current Album Cover
             </p>
+            <div v-if="album_selected.album_cover === null">
+              <p class="title is-centered">
+                A Album Cover hasn't been selected yet
+              </p>
+            </div>
+            <div v-else>
+              <img class="image" :src="album_cover_url" alt="Whoops....">
+            </div>
           </div>
         </div>
       </div>
       <div class="preview-album">
         <div class="preview-album-container">
           <div v-for="preview in album_preview" :key="preview.id"  class="album-photo">
-            <img alt="Whoops....." :src="preview[1]" @click="deleteSelect($event,preview[0])" >
+            <img alt="Whoops....." :src="preview[1]" @click="chooseSelect($event,preview[0],deleteMode)" >
           </div>
         </div>
       </div>
@@ -133,6 +154,15 @@ export default {
       current_file_name: '',
       updated_album: '',
       file_names: [],
+
+      deleteMode: false,
+      selected_cover: '',
+      previous_target: {},
+      target_list: new Set(),
+      album_cover_url: '',
+
+
+
     }
   },
   mounted() {
@@ -157,6 +187,13 @@ export default {
         console.log(this.album_selected)
         console.log("Uploading Album Preview....")
         //this.getPhotosApi()
+        this.album_cover_url = ''
+        if(this.album_selected.album_cover !== null)
+        {
+          Storage.get(this.album_selected.album_cover).then(url=>{
+            this.album_cover_url = url
+          })
+        }
         this.delete_list.clear()
         this.getAlbumPhotos()
         this.updated_album = this.album_selected.name
@@ -176,21 +213,88 @@ export default {
   },
 
   methods: {
-    deleteSelect(event, key)
+    async updateAlbumCover()
+    {
+      if(this.selected_cover !=='')
+      {
+        await API.graphql(graphqlOperation(updateAlbum, {input: {id: this.album_selected.id,
+            album_cover: this.selected_cover }}))
+        this.album_cover_url = await Storage.get(this.selected_cover)
+        this.album_selected.album_cover = this.selected_cover
+        if(this.previous_target.classList !== undefined)
+        {
+          this.previous_target.classList.remove('big-green')
+        }
+        this.previous_target = {}
+        this.selected_cover = ''
+      }
+    },
+    chooseSelectMode(mode)
+    {
+      if(mode === 'delete')
+      {
+        this.deleteMode = true
+        if(this.previous_target.classList !== undefined)
+        {
+          this.previous_target.classList.remove('big-green')
+        }
+        this.previous_target = {}
+        this.selected_cover = ''
+      }
+
+      else if(mode === 'album_select')
+      {
+        this.deleteMode = false
+        this.delete_list.clear()
+        this.target_list.forEach(target=>{
+          target.classList.remove('big-danger')
+        })
+      }
+
+    },
+    chooseSelect(event, key, mode)
     {
       //console.log(key)
+      if(mode === true)
+      {
+        if(!this.delete_list.has(key))
+        {
+          this.delete_list.add(key)
+          event.target.classList.add('big-danger')
+          this.target_list.add(event.target)
+        }
+        else if(this.delete_list.has(key))
+        {
+          event.target.classList.remove('big-danger')
+          this.delete_list.delete(key)
+          this.target_list.delete(event.target)
+        }
+        //console.log(this.delete_list)
+      }
+      else if (mode === false)
+      {
+        this.selected_cover = key.photo_key
+        if(this.previous_target === event.target)
+        {
+          event.target.classList.remove('big-green')
+          this.previous_target = {}
+          this.selected_cover = ''
+        }
+        else if(this.previous_target.classList !== undefined)
+        {
+          this.previous_target.classList.remove('big-green')
+          event.target.classList.add('big-green')
+          this.previous_target = event.target
 
-      if(!this.delete_list.has(key))
-      {
-        this.delete_list.add(key)
-        event.target.classList.add('big-danger')
+        }
+        else
+        {
+          event.target.classList.add('big-green')
+          this.previous_target = event.target
+        }
+
+
       }
-      else if(this.delete_list.has(key))
-      {
-        event.target.classList.remove('big-danger')
-        this.delete_list.delete(key)
-      }
-      //console.log(this.delete_list)
     },
     deleteSelection()
     {
@@ -664,6 +768,11 @@ export default {
   border: darkred 10px solid;
   box-shadow: 0 0 10px firebrick;
   opacity: 80%;
+}
+.big-green{
+  border: green 10px solid;
+  box-shadow: 0 0 10px darkgreen ;
+
 }
 
 </style>

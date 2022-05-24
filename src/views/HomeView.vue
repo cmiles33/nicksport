@@ -69,7 +69,15 @@ export default {
           if (album.photos.items[0] !== undefined)
           {
             preview_info.push(album.name)
-            let preview_key = album.photos.items[0].preview_key
+            let preview_key
+            if(album.album_cover !== null)
+            {
+              preview_key = album.album_cover
+            }
+            else
+            {
+              preview_key = album.photos.items[0].preview_key
+            }
             Storage.get(preview_key).then(photo_url=>{
               preview_info.push(photo_url)
               this.photo_prev_list.push(preview_info)

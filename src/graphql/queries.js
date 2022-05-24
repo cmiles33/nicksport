@@ -6,6 +6,7 @@ export const getAlbum = /* GraphQL */ `
     getAlbum(id: $id) {
       id
       name
+      album_cover
       photos {
         items {
           id
@@ -33,17 +34,19 @@ export const listAlbums = /* GraphQL */ `
       items {
         id
         name
-        photos {
-          items {
-            id
-            title
-            photo_key
-            preview_key
-            createdAt
-            updatedAt
-            albumPhotosId
+        album_cover
+          photos {
+              items {
+                  id
+                  title
+                  photo_key
+                  preview_key
+                  createdAt
+                  updatedAt
+                  albumPhotosId
+              }
+              nextToken
           }
-        }
         createdAt
         updatedAt
       }
@@ -56,15 +59,6 @@ export const getPhoto = /* GraphQL */ `
     getPhoto(id: $id) {
       id
       title
-      album {
-        id
-        name
-        photos {
-          nextToken
-        }
-        createdAt
-        updatedAt
-      }
       photo_key
       preview_key
       createdAt
@@ -83,12 +77,6 @@ export const listPhotos = /* GraphQL */ `
       items {
         id
         title
-        album {
-          id
-          name
-          createdAt
-          updatedAt
-        }
         photo_key
         preview_key
         createdAt
